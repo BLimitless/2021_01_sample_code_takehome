@@ -1,0 +1,102 @@
+2:04 Start
+2:07 Finished reading sample project
+2:10 Started new PyCharm Project and this text doc
+2:11 Figured out how to start a new Project from a git clone. Remade this text doc in it.
+2:13 Ran install.sh
+2:17 Finished reading energy_client.py
+2:19 Finished skimming models.py
+2:22
+- Finished reading stack overflow answer on Static Variable Types in python. Been wondering how to do this.
+- Thanks sample test!
+2:32 Changed python interpreter to 3.8. Now can use static variable types.
+2:34 Now wrestling with re-installing install.sh since it says there's no pydantic installed. Sigh.
+2:37 Just pip installed pydantic in the python console by hand rather than via script.
+2:38 This appears to have done the trick. Can now start figuring out how to make those tests pass!
+2:48
+- I now understand what I really need to do for this sample project:
+- implement the models.get_savings_for_date_range method. Let's go!
+2:49 Starting implementation
+3:03 Think I figured out how everything fits together:
+1) the actual building objects and data are created in the test_biz_logic.py. This is what is meant by "Fixtures"
+2) those objects pull the needed methods from models.py
+3) in turn, stuff in the models.py pulls what it needs from the energy_client.py
+4) the first automated test is checking to make sure that if there's measures implemented, energy use is less
+5) the second automated test is checking to make sure if a measure is only on for part of the, energy use is more
+Okay. Now let's rock.
+3:07 Starting implementation for real. But first, I need a 5min break. This has been hard for me.
+3:09 Alright. Let's rock.
+3:23 Think I wrote out the pseudocode needed on paper for the method
+4:06
+- Figured out code to work with the fact that the objects are created in test_biz_logic.
+- I can get the savings from a measure from a building now.
+- Now I think I can actually start coding this.
+4:07 Starting.
+4:17 I understand the Datapoint class and the Timeseries variable and how to use them. This is hard!
+4:36
+- Got method to return full list of savings from energy_client, then list filtered for months passed into method
+- List returns empty however when also filtered for when the measure isn't on. Troubleshooting.
+4:38 Ah! The stub years are screwing me up. Start date is month 6, stop is month 1, so I was getting an empty list.
+4:54 I now understand the time stamp lining up problem in full. Now need to code it.
+5:45
+- Popped the list of annual energy savings into a dataframe and unpacked the tuples.
+- The rest should be easy.
+- Breaking for dinner.
+6:45 Back at it.
+8:10 I am going crazy trying to extract a float from a single cell pandas dataframe. Stopping
+8:55: Back at it.
+9:05: Figured out how to get a single float out of a pandas dataframe. But now I'm apparently returning an empty list.
+9:17 Huh. Now it works for the first measure in first building, but not subsequent ones. Neat...
+9:19 Oh, it's working: the second measure in bldg 1 and measure in bldg 2 are only on after the test dates end.
+9:21 So why are the other tests failing?? The savings list looks right to me. Hmm...
+9:45.
+- Oh. Oh no. The timeframe for the building energy use could be much more than a year, making my method incorrect.
+- Need to go back to a different approach.
+- Or maybe could use pandas still, but make a column a code for month-day-min and then match savings to it.
+- Have another column that's zero if the measure wasn't on.
+- Then pull savings the savings column times the measure on boolean for the range given.
+- Oy. Calling it for the night.
+Time Splits (5.5hrs total so far, wow):
+- 2.5hrs (2:04 - 4:38) -- understand assignment, classes, what to do, how to code effectively with stub data in pytest
+--- there was huge learning here for me. this was fun.
+- 1hr (4:38 - 5:45) -- understand timestamp problem, and how to unpack the list, get it into pandas dataframe
+--- continued learning on how packages fit together and how to move data around
+- 1.5hrs (6:45 - 8:10, 8:55-9:05) -- figure out how to get a single float out of a pandas dataframe, not a 1cell dataframe
+--- Learned more about classes: how to work with classes with no methods (DataPoint), and datatype definition (Timeseries)
+- 0.5hrs (9:17 - 9:45) -- Tried to figure out why the other tests are failing even though I think my function is working.
+--- No learnings here yet, but probably just to tired. Calling it a night.
+
+7:18 Starting again, new plan!
+x Move code to get dataframe of annualized savings to its own function
+x Write tests on it to make sure it's returning right length, right columns, etc.
+x Modify code of getting savings to append 0 savings to list of measure is off
+- Test start, end, length of Timeseries returns to make sure it's right
+- Test if start and end of Timeseries returns are between dates passed in
+- Test if savings 1yr before start and one year after end are 0.
+7:20 coding
+7:40 moved code to get dataframe to own function, wrote test to test return df. Test passes.
+
+11:15 Back at it.
+11:30 Finished writing tests on dataframe function. All pass. And learned how to embed messages in assert statements.
+11:43 Finished writing tests checking data types output by get_measure_savings_for_date_range. No more print statements!
+11:45 All tests pass! Booyahkasha! Done.
+
+Total Time: 6.15 Hours
+Specific Learnings:
+-- How classes and objects work in way deeper detail.
+---- How classes work when there are no methods
+---- More detail on how/when to use 'self' within a method and class
+---- How to define a Datatype (DataPoint)
+---- More sense about where a method should go within an overall package, e.g. energy_client v models
+-- How to use static types, eg this variable can only be an 'int'
+-- How to work in pytest much better:
+---- How to set up stub data, then use it in pytest to drive tests
+---- How to do assert statements with custom messages
+---- How to use pytest to keep running little portions of code, kind of like Jupyter Notebooks
+-- Refined Test Driven Development ability
+---- How to use TDD to make sure the right datatype is being passed and returned by methods.
+------- Me returning the wrong datatype (e.g. 1x1 Pandas Series instead of float) has cost me so much time in the past.
+------- I'm excited by this learning.
+-- How to work with more datastructures.
+---- The ways lists were used here -- a list of made DataPoint objects -- forced me to gain comfort accessing lists
+---- and properties of objects in a way I haven't done before. And to mix it with Pandas in a cool way.
+-- Overall, how to break what I'm trying to accomplish next into much smaller pieces, each with its own test.

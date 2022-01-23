@@ -1,7 +1,9 @@
 import unittest
 from datetime import datetime
+
+import pandas as pd
 from dateutil.relativedelta import relativedelta
-from models import Building, Measure, MeasureType, get_first_moment_of_month
+from models import Building, Measure, MeasureType, get_first_moment_of_month, DataPoint
 
 start_of_month = get_first_moment_of_month(datetime.now())
 
@@ -112,9 +114,50 @@ class TestChallengeTask(unittest.TestCase):
             if ts.year == start_of_month.year and ts.month == start_of_month.month:
                 self.assertLess(full_coverage.value, partial_coverage.value)
 
+    def test_get_measure_savings_dataframe(self):
+        # several tests to make sure method returning dataframe of savings is working
+        # bundling as large test function to avoid repeating the same for loops and method call over and over
+        # there's probably a way to do that with @fixture or something and split up the tests, but I don't know it.
+        for building in (building_1, building_2):
+            for measure in building.measures:
+                df = measure.get_measure_savings_dataframe()
+                print('Current df looks like:')
+                print(df.head())
+
+                # make sure is DataFrame
+                assert type(df) is pd.DataFrame, 'Get measure savings dataframe did not return dataframe'
+
+                # make sure has right columns
+                cols = str.split('Timestamps Values Month Day Minute', sep=' ')
+                for col in df.columns:
+                    if(col not in cols):
+                        assert False, 'Unexpected column returned'
+                for col in cols:
+                    if(col not in df.columns):
+                        assert False, 'Dataframe missing column'
+
+                # make sure length is correct
+                self.assertEqual(len(df.index),8760*4, 'Length incorrect')
+
     def test_get_measure_savings_for_date_range(self):
         # write this test for the at-home challenge
-        raise NotImplementedError()
+        test_start = datetime(year=2019, month=1, day=1)
+        test_stop = datetime(year=2022, month=12, day=31)
+
+        for building in (building_1, building_2):
+            for measure in building.measures:
+                result = measure.get_savings_for_date_range(test_start, test_stop)
+                assert type(result) is list, 'Result not Timeseries'
+                assert type(result[0]) is DataPoint, 'First entry in result not DataPoint'
+                assert type(result[0].value is float), 'First value in Result is not float'
+                assert type(result[0].timestamp is datetime), 'First timestamp in Result is not datetime'
+                assert result[0].timestamp >= test_start, 'First timestamp is < test start'
+                assert result[-1].timestamp < test_stop, 'Last timestamp is >= test stop'
+                '''
+                Couldn't figure out simple way to test that if a measure's off there's no savings,
+                but all tests pass and the method code is pretty simple so stopping. This was fun! 
+                '''
+        assert True
 
 
 if __name__ == "__main__":

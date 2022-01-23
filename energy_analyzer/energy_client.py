@@ -2,6 +2,8 @@ from enum import Enum
 from typing import Dict, List, Union
 
 from datetime import datetime, timedelta
+
+import pandas as pd
 from dateutil.relativedelta import relativedelta
 from pydantic import BaseModel
 

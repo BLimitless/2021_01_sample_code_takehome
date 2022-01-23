@@ -2,6 +2,7 @@ from collections import defaultdict
 from datetime import datetime
 from typing import List, Optional
 
+import pandas as pd
 from dateutil.relativedelta import relativedelta
 from pydantic import BaseModel
 
@@ -37,6 +38,23 @@ class Measure(BaseModel):
     start: datetime
     end: datetime
 
+    def get_measure_savings_dataframe(self) -> pd.DataFrame:
+        '''
+        Returns dataframe of energy savings, with columns for Index, Values [savings], Month, Day, Minute.
+
+        This dataframe can then be used for easy analysis, e.g. groupby.month, or single timestamp matching
+        '''
+        full_year = EnergyClient.get_measure_expected_energy_savings_for_generic_year(self.measure_type)
+        timestamps = [item.timestamp for item in full_year]
+        values = [item.value for item in full_year]
+
+        df = pd.DataFrame({'Timestamps': timestamps, 'Values': values})
+        df['Month'] = df['Timestamps'].apply(lambda x: x.month)
+        df['Day'] = df['Timestamps'].apply(lambda x: x.day)
+        df['Minute'] = df['Timestamps'].apply(lambda x: x.minute)
+
+        return df
+
     # Implement this function for the at home challenge
     def get_savings_for_date_range(self, start: datetime, end: datetime) -> Timeseries:
         """
@@ -48,7 +66,28 @@ class Measure(BaseModel):
         A correct solution will account for whether the measure is active or not during the
         given time range.
         """
-        raise NotImplementedError()
+        current_time: datetime
+        savings: Timeseries
+
+        df = self.get_measure_savings_dataframe()
+        # Loop through all timestamps that should have savings, append them to list if:
+        current_time = start
+        savings = []
+        while(current_time < end):
+            # if the measure is functional
+            if(self.start <= current_time < self.end):
+                savings.append(
+                    DataPoint(timestamp=current_time,
+                              value=df.loc[(df['Month']==current_time.month) &
+                                           (df['Day']==current_time.day) &
+                                           (df['Minute']==current_time.minute),
+                                           'Values'].iloc[0]
+                              )
+                )
+            else:
+                savings.append(DataPoint(timestamp=current_time, value=0))
+            current_time += relativedelta(minutes=15)
+        return savings
 
 
 class Building(BaseModel):
